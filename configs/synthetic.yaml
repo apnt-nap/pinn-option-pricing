@@ -1,0 +1,39 @@
+# End-to-end smoke test on synthetic data in the cleaned-data schema.
+#   python -m pinnvol synth -c configs/synthetic.yaml
+#   python -m pinnvol all   -c configs/synthetic.yaml
+# Small sizes so the whole pipeline finishes in minutes on a laptop CPU.
+seed: 0
+device: cpu
+
+paths:
+  data_dir: runs/synthetic/data
+  rates_dir: runs/synthetic/fred
+  output_dir: runs/synthetic
+
+synthetic:
+  start: "2016-01-01"
+  end: "2021-06-30"
+  strike_step: 0.025
+
+period:
+  start: "2016-01-01"
+  train_end: "2018-12-31"
+  valid_end: "2019-12-31"
+  test_end: "2021-06-30"
+
+sample:
+  max_options_per_day: 40
+
+volatility:
+  forecast_start: "2019-01-01"
+  garch: {min_obs: 500}
+  har: {min_obs: 500}
+  lstm: {epochs: 8, seeds: [0, 1], min_obs: 500, refit: "Q"}
+
+pinn:
+  mode_p: {adam_steps: 1500, lbfgs_steps: 100, n_collocation: 4096, n_terminal: 1024, n_boundary: 512, n_validation: 5000}
+  mode_h: {seeds: [0, 1], steps: 150, n_data: 3000, n_collocation: 2048, window_months: 6}
+
+benchmarks:
+  crank_nicolson: {n_sample: 200, nx: 200, nt: 100}
+  ffnn: {steps: 300, n_data: 5000}
