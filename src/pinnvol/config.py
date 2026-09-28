@@ -110,7 +110,9 @@ DEFAULTS: dict[str, Any] = {
             "resample_every": 250,
             "residual_v0": 0.05,  # residual weight min(1, sigma sqrt(tau) / v0); null = unweighted
             "boundary": "dirichlet",  # "dirichlet" | "linear" (V_SS = 0)
-            "weights": {"pde": 1.0, "terminal": 1.0, "boundary": 1.0},
+            # terminal weight 10: with 1 the payoff fit was the bottleneck (about 4.5 index points
+            # MAE at K = 4000); with 10 validation MAE fell to about 0.3 points
+            "weights": {"pde": 1.0, "terminal": 10.0, "boundary": 1.0},
             "weighting": "fixed",  # "fixed" | "lra" (learning-rate annealing, Wang et al. 2021)
             "lra_every": 100,
             "lra_alpha": 0.9,

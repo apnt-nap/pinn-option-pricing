@@ -146,7 +146,8 @@ These are decisions the team should confirm or change; each is a config switch.
 3. **Far-field domain.** The Dirichlet conditions of Section 11.4 are only accurate several
    standard deviations from the money; at $\sigma\sqrt\tau = 0.6$ the proposal's
    $x \in [\ln 0.5, \ln 1.5]$ is too narrow, so the default is $x \in [-2.5, 2.5]$.
-4. **Learning-rate annealing** is implemented (`weighting: lra`) but off by default: with the
+4. **Terminal weight 10** (`pinn.mode_p.weights.terminal`): with equal weights the payoff fit
+   limited accuracy. **Learning-rate annealing** is implemented (`weighting: lra`) but off by default: with the
    unbounded near-expiry residuals it pushed the boundary weights above $10^5$ and made results worse.
 5. **Inputs outside the PINN domain** ($\tau$, $r$, $q$, $\sigma$) are clipped for every engine, so
    solver error compares identical inputs; `treatment_inputs.csv` reports the clipped share.
@@ -154,12 +155,13 @@ These are decisions the team should confirm or change; each is a config switch.
 
 ## Known limitations
 
-- **PINN solver error is not yet small enough.** See `pinn_mode_p.json` after training. On
-  held-out points in the pricing region the Mode P network is off by several index points at
-  $K = 4000$, which is comparable to the pricing differences between volatility inputs. Until
-  this is closer to 1 point, `pinn_p` rankings can differ from `bs` rankings for reasons that are
-  solver error, not volatility. The `bs` and `cn` rows are the clean reference for the
-  volatility effect; `metrics_vs_bs.csv` measures the gap.
+- **PINN solver error.** With the default settings (10,000 Adam + 1,500 L-BFGS steps, terminal
+  weight 10), Mode P reached a mean absolute error of 7.5e-5 of the strike against the closed form
+  on held-out points with $0.8 \le K/S \le 1.2$, 7-180 DTE and $\sigma \in [0.05, 0.9]$: about
+  **0.3 index points at $K = 4000$** (max 1.6 points), after about 25 minutes on 2 CPU threads.
+  With terminal weight 1 the same run gave 4.5 points. `pinn_mode_p.json` records the validation
+  of every run; check it before reading `pinn_p` results. Short runs (as in
+  `configs/synthetic.yaml`) are far less accurate.
 - The realised-variance proxy is squared close-to-close returns; a range-based estimator needs
   daily OHLC, which the cleaned files do not carry.
 - Third-Friday expiries in the OptionsDX files may mix AM-settled SPX with PM-settled SPXW
