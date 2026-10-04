@@ -51,7 +51,7 @@ def pde_residual(model: BlackScholesPINN, p: dict[str, torch.Tensor]) -> torch.T
 
 
 def pde_loss(model: BlackScholesPINN, p: dict[str, torch.Tensor], v0: float | None = None) -> torch.Tensor:
-    """Mean squared residual.
+    r"""Mean squared residual.
 
     With ``v0`` set, each residual is weighted by $\rho = \min(1, \sigma\sqrt\tau / v_0)$. Near
     expiry the exact solution has $u_{xx} \sim 1/(\sigma\sqrt\tau)$, so unweighted residuals there
@@ -75,7 +75,7 @@ def boundary_target(p: dict[str, torch.Tensor]) -> torch.Tensor:
 
 
 def boundary_loss(model: BlackScholesPINN, p: dict[str, torch.Tensor], kind: str = "linear") -> torch.Tensor:
-    """Far-field loss at $x = x_{min}, x_{max}$.
+    r"""Far-field loss at $x = x_{min}, x_{max}$.
 
     ``"dirichlet"``: $u = \max(e^{x - q\tau} - e^{-r\tau}, 0)$, accurate only when the boundary
     is many standard deviations $\sigma\sqrt\tau$ away from the money.

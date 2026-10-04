@@ -40,17 +40,63 @@ def month_files(data_dir: str | Path, start: str, end: str) -> list[Path]:
     return [f for f in files if f.exists()]
 
 
+def _good_friday(year: int) -> pd.Timestamp:
+    """Good Friday (anonymous Gregorian algorithm for Easter Sunday, minus two days)."""
+    a, b, c = year % 19, year // 100, year % 100
+    d, e = b // 4, b % 4
+    g = (8 * b + 13) // 25
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = c // 4, c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    month, day = divmod(h + l - 7 * m + 114, 31)
+    return pd.Timestamp(year, month, day + 1) - pd.Timedelta(days=2)
+
+
+def flag_am_monthlies(df: pd.DataFrame) -> pd.DataFrame:
+    """Re-derive ``is_third_friday`` as "AM-settled standard monthly" and fix ``dte`` to settlement.
+
+    OptionsDX dates the standard monthly by its last trading day, the Thursday before the
+    third Friday, until about August 2016, and by the third Friday afterwards. A Thursday
+    expiry the day before the third Friday ``F3`` is therefore taken as the monthly when
+
+    * ``F3`` is Good Friday (the exchange moves expiry and AM settlement to Thursday), or
+    * no expiry dated ``F3`` is quoted on the same day (the vendor's Thursday convention).
+      Settlement is then Friday's open, so ``dte`` gains one day.
+
+    A Thursday expiry quoted alongside an ``F3`` expiry is a PM-settled SPXW daily (2022+)
+    and is left alone. ``df`` must hold every expiry of each quote date it contains.
+    """
+    e = df["expire_date"]
+    first = e.dt.to_period("M").dt.start_time
+    f3 = first + pd.to_timedelta((4 - first.dt.weekday) % 7 + 14, unit="D")
+    years = range(int(e.dt.year.min()), int(e.dt.year.max()) + 1)
+    good_friday = f3.isin([_good_friday(y) for y in years])
+    pairs = pd.MultiIndex.from_frame(df[["quote_date", "expire_date"]].drop_duplicates())
+    f3_listed = pd.MultiIndex.from_arrays([df["quote_date"], f3]).isin(pairs)
+    thursday = (e == f3 - pd.Timedelta(days=1)).to_numpy()
+    shifted = thursday & ~good_friday.to_numpy() & ~f3_listed
+    monthly = (e == f3).to_numpy() | (thursday & (good_friday.to_numpy() | ~f3_listed))
+    df["is_third_friday"] = monthly.astype("int8")
+    df["dte"] = (df["dte"].to_numpy() + shifted).astype(df["dte"].dtype)
+    return df
+
+
 def load_options(data_dir: str | Path, start: str, end: str, family: str = "all") -> pd.DataFrame:
     """Load cleaned options quoted in ``[start, end]``.
+
+    ``is_third_friday`` is re-derived by :func:`flag_am_monthlies` (the flag in the cleaned
+    files misses the Thursday-dated monthlies before September 2016).
 
     Args:
         data_dir: folder holding ``options/``.
         start, end: ISO dates (inclusive).
-        family: ``"monthly"`` keeps third-Friday (AM-settled) expiries only; ``"all"`` keeps all.
+        family: ``"monthly"`` keeps AM-settled standard monthlies only; ``"all"`` keeps all.
     """
     frames = []
     for f in month_files(data_dir, start, end):
         df = pd.read_csv(f, usecols=_USECOLS, dtype=_DTYPES, parse_dates=["quote_date", "expire_date"])
+        df = flag_am_monthlies(df)
         if family == "monthly":
             df = df[df["is_third_friday"] == 1]
         frames.append(df)
