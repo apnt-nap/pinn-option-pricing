@@ -3,7 +3,7 @@
 Every item has an ID (A1, B1, ...). To start work, name the ID(s): "do A2", "do Phase 2",
 "do A1 and A2 without Mode H", "do A4 with lambdas 0.05 and 0.5".
 
-Run from the repository root:  python reports/build_improvement_proposal.py
+Run from the repository root:  python reports/build_improvement_proposal.py\nThe PDF is a snapshot; ../IMPROVEMENT_PROPOSAL.md is the living master copy.
 """
 from __future__ import annotations
 
@@ -240,9 +240,32 @@ BY_ID = {it["id"]: it for it in ITEMS}
 
 def to_markdown() -> str:
     L = [f"# Improvement proposal — PINN volatility study", "",
-         f"_{DATE} · baseline: {BASELINE}_", "",
-         "Each improvement has an **ID**. Tell me the ID(s) to start work. Evidence for every item is in "
-         "`reports/PINN_volatility_progress_report.pdf`.", "", "## How to ask", ""]
+         f"_Written {DATE} · baseline: {BASELINE}_", "",
+         "**This file is the master copy.** Keep it, edit it, add notes. Tell Claude an item ID "
+         "(\"do A2\") and it reads this file, does the work, and updates the status table below. "
+         "Evidence for every item is in `reports/PINN_volatility_progress_report.pdf`.", "",
+         "## Status", "",
+         "Update this table as work happens (Claude does it after each item).", "",
+         "| ID | Status | Run folder | Result (vs baseline) | Date |", "|---|---|---|---|---|"]
+    L += [f"| {it['id']} | proposed | — | — | — |" for it in ITEMS]
+    L += ["", "Status values: proposed · in progress · done · dropped · blocked (say why).", "",
+          "## Your notes", "", "_Add decisions, answers to the \"Decision needed\" items, or new ideas here._", "",
+          "- A2 decision (headline or robustness table): ",
+          "- A3b decision (source of SPX closes before 2012): ",
+          "- A4 decision (λ values): ",
+          "- C2 decision (subsample size): ", "",
+          "## Context for Claude (where things are)", "",
+          "- Laptop folder: `C:\\Users\\atipa\\OneDrive\\Desktop\\project\\project dev` "
+          "(WSL: `/mnt/c/Users/atipa/OneDrive/Desktop/project/project dev`).",
+          "- Repo: `code/` = github.com/apnt-nap/pinn-option-pricing, branch "
+          "`claude/pinn-research-pipeline-4u075w`. Raw data `dataset/` and cleaned data `data-clean/` sit next "
+          "to it and are read-only.",
+          "- Python: `source ~/.venvs/pinnvol/bin/activate` (uv venv, torch + CUDA on the RTX 3050 Ti 4 GB, "
+          "7 GB RAM).",
+          "- Run stages from `code/` with `nohup python -u -m pinnvol <stage> -c configs/<file>.yaml > "
+          "runs/<stage>.log 2>&1 &`; `price` takes ≈ 5 h with Mode H at 5 seeds.",
+          "- Baseline outputs: `code/runs/main/` (report.md, metrics_*.csv, dm_tests.csv, predictions.pkl).",
+          "", "## How to ask", ""]
     L += [f"- {h}" for h in HOW_TO]
     L += ["", "## Ground rules for every item", "", "| Rule | Value |", "|---|---|"]
     L += [f"| {a} | {b} |" for a, b in RULES]
@@ -392,8 +415,16 @@ def build_pdf(path: Path) -> None:
     doc.build(S, onFirstPage=on_page, onLaterPages=on_page)
 
 
+MD_PATH = OUT.parent / "IMPROVEMENT_PROPOSAL.md"
+
 if __name__ == "__main__":
-    (OUT / "IMPROVEMENT_PROPOSAL.md").write_text(to_markdown(), encoding="utf-8")
+    import sys
+
+    # The Markdown file is the living master copy (status table, notes); never overwrite it silently.
+    if not MD_PATH.exists() or "--force-md" in sys.argv:
+        MD_PATH.write_text(to_markdown(), encoding="utf-8")
+        print(MD_PATH)
+    else:
+        print(f"{MD_PATH} exists; kept (use --force-md to regenerate from this script)")
     build_pdf(OUT / "PINN_improvement_proposal.pdf")
-    print(OUT / "IMPROVEMENT_PROPOSAL.md")
     print(OUT / "PINN_improvement_proposal.pdf")
