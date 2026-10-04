@@ -20,7 +20,8 @@ pytest                            # about 1 minute on a laptop CPU
 ## Data
 
 The option data is licensed and never goes in this repository (`.gitignore` excludes it).
-Point `paths.data_dir` at the folder written by `clean_spx.py`:
+Point `paths.data_dir` at the folder written by `scripts/clean_spx.py` (standard library only; run it
+from the folder that holds the raw OptionsDX `dataset/`: `python3 code/scripts/clean_spx.py`):
 
 ```
 data-clean/
@@ -32,6 +33,10 @@ data-clean/
 
 Risk-free rates come from FRED (DGS1MO, DGS3MO, DGS6MO, DGS1); `pinnvol fetch-rates` downloads
 them (no API key). Dividend yields are backed out from put-call parity, so no dividend data is needed.
+
+OptionsDX dates the AM-settled monthly by its last trading day (the Thursday before the third
+Friday) until August 2016, so the `is_third_friday` column in the cleaned files misses those
+monthlies. `load_options` re-derives the flag (`flag_am_monthlies`); do not filter on the raw column.
 
 ## Run the full study
 
@@ -181,5 +186,7 @@ src/pinnvol/
   evaluation/         metrics, stratification, Diebold-Mariano
   pipeline/           the five stages
 configs/              default.yaml (real data), synthetic.yaml (smoke test)
+scripts/clean_spx.py  OptionsDX raw files -> data-clean/ (filters, stale-day removal, cleaning log)
+reports/             progress report: build_progress_report.py (reads runs/main) -> PDF + figures
 tests/                closed-form checks, parity, no-look-ahead checks, PINN residual
 ```
