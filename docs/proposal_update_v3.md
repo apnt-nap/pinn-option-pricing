@@ -7,17 +7,7 @@ Amends the revised proposal (v2) after the first full run on the real data. Last
 
 ## How to use this file
 
-Every proposed improvement has a short code (A1, A2, ... E2). To ask for work, reply in the project thread with codes:
-
-| You write | What happens |
-|---|---|
-| `do A1 and A2` | Build those items, rerun the stages they need, report the new results |
-| `do phase 2` | Run one bundle from [Section 6](#6-phases) |
-| `do all High` | Every item marked High priority |
-| `plan A3` | Explain the change in detail first, run nothing |
-| `do A4 with λ 0.01, 1, 10` | Override a default from [Section 7](#7-open-choices-and-defaults) |
-
-You can also edit this file: change a default in Section 7, cross out an item, or add a note under an item, then send the file (or say "read the proposal update in the repo"). The **Status** column in Section 4 is updated as items are done.
+This file amends the research proposal: what changed in the method, where the hypotheses stand, and the new question the improvements answer. The **list of improvements you can request** (codes A1 to W1, phases 1 to 6, acceptance criteria and defaults) lives in one place only: [`reports/IMPROVEMENT_PROPOSAL.md`](../reports/IMPROVEMENT_PROPOSAL.md). Ask for work by those codes, for example "do Phase 1" or "do A1 and A2".
 
 ---
 
@@ -68,7 +58,7 @@ Numbering as in proposal v2 (with its revised H3 and new H5, H6). Evidence is fr
 | H2 | Relative performance differs across moneyness and maturity | Supported for moneyness (largest gaps in the put wing); maturity not yet summarised | B1, B2 |
 | H3 (rev.) | Lagged ATM IV beats GARCH and LSTM, most at short maturities | First part supported (23.4 vs 33.5 and 36.3); maturity part untested | B1 |
 | H4 | LSTM may help in changing regimes; GARCH stays competitive | Opposite in the COVID crash; close in calm markets | A3 |
-| H5 | Forecast ranking differs from pricing ranking because of the risk premium | Indicated: forecast-based inputs underprice by about 20 points | A2, B3 |
+| H5 | Forecast ranking differs from pricing ranking because of the risk premium | Indicated: forecast-based inputs underprice by about 20 points | A2, forecast-accuracy table |
 | H6 | Hybrid PINN: gap between inputs shrinks as λ grows | Untested (one λ only) | A4 |
 
 ---
@@ -94,148 +84,9 @@ Treatments A, B, C1 and C2 stay unchanged: the first-run comparison remains prim
 
 ---
 
-## 4. Improvement menu
+## 4. Improvements
 
-Laptop times are estimates for the RTX 3050 Ti laptop, scaled from the first run.
-
-| Code | Improvement | Priority | Reruns | Laptop time | Status |
-|---|---|---|---|---|---|
-| A1 | Separate the volatility level from the smile | High | vol, price, evaluate | ≈ 30 min (PINN-P); +2 h with hybrid | Not started |
-| A2 | Correct for the volatility risk premium | High | vol, price, evaluate | ≈ 30 min (PINN-P) | Not started |
-| A3 | Strengthen the LSTM | High | vol, price, evaluate | ≈ 1–2 h | Not started |
-| A4 | Explore the hybrid weight λ | Medium | price, evaluate | ≈ 2 h per λ (2 seeds) | Not started |
-| A5 | Label the same-day contract IV as an oracle | Medium | evaluate | Minutes | Not started |
-| B1 | Multiple-testing control; DM tests per regime and bucket | Medium | evaluate | Minutes | Not started |
-| B2 | Errors in volatility units and relative terms | Low | evaluate | Minutes | Not started |
-| B3 | Volatility forecast accuracy table in the paper | Medium | none | None | Not started |
-| C1 | Document the monthly-dating fix in the data | Medium | none | None | Partly done (README) |
-| C2 | Use 2012–2018 options; weekly-options robustness sample | Medium | full run | ≈ 6 h | Not started |
-| D1 | Tighten the physics-only PINN | Low | train-pinn, price, evaluate | ≈ 20 min + rerun | Not started |
-| E1 | Timestamped logs and checkpointing in price | Low | none | None | Not started |
-| E2 | Freeze the software environment | Low | none | None | Not started |
-
-Codes match the progress report in `reports/` (B3 is new here).
-
----
-
-## 5. Improvement details
-
-### A. Research design
-
-**A1. Separate the volatility level from the smile** · High · proposal §10, §15
-- *What changes:* smile-adjusted treatments (Section 3). GARCH, LSTM and ATM IV keep their own level but borrow the previous day's smile shape.
-- *Why:* the comparison is partly "has a smile vs has no smile". Most GARCH and LSTM error is in the out-of-the-money puts, where the smile is steepest.
-- *Expected:* wing errors for GARCH and LSTM fall sharply; the remaining gap measures forecasting skill.
-
-**A2. Correct for the volatility risk premium** · High · §10, §16.5
-- *What changes:* multiply each GARCH and LSTM forecast by a rolling 12-month ratio of ATM IV to the forecast. Report raw and adjusted.
-- *Why:* option prices include a premium for volatility risk, so even a perfect forecast of realised volatility underprices. The −20-point bias shows this.
-- *Expected:* bias moves towards zero and RMSE falls; what remains is dynamic forecasting skill.
-
-**A3. Strengthen the LSTM** · High · §7, §10.2
-- *What changes:* refit monthly like GARCH; train on SPX closes from 2000 (`paths.extra_prices_csv`, already supported); choose settings on a validation window that includes a stressed period; optionally the LSTM-IV hybrid.
-- *Why:* trained on only about 1,700–2,900 days, it learned a calm market and broke down in the COVID crash. A weak setup makes "LSTM loses" a statement about this configuration, not about deep learning.
-- *Expected:* more reactive in crises; at least matches GARCH. With IV inputs it may approach ATM IV.
-
-**A4. Explore the hybrid weight λ** · Medium · §11.5
-- *What changes:* run the hybrid PINN at several λ with 2 seeds (the 5-seed spread was tiny); plot error against the market and against Black-Scholes versus λ.
-- *Why:* only λ = 0.1 was run. The data-physics trade-off is the most PINN-specific result, and H6 needs it.
-- *Expected:* market error falls and Black-Scholes error rises with λ; λ is then chosen on 2019.
-
-**A5. Label the same-day contract IV as an oracle** · Medium · §16.2
-- *What changes:* mark it as an upper bound in all tables; leave it out of rankings and DM tests.
-- *Why:* it prices each option with its own implied volatility (RMSE 0.19), so it can be misread as a winning method.
-- *Expected:* clearer tables, same conclusions.
-
-### B. Statistics and evaluation
-
-**B1. Multiple-testing control; tests per regime and bucket** · Medium · §14
-- *What changes:* Holm-Bonferroni on the pairwise Diebold-Mariano tests (Model Confidence Set as a check); repeat within each regime, maturity and moneyness bucket.
-- *Why:* about 70 tests at nominal p-values; GARCH vs LSTM (p = 0.03) may not survive.
-- *Expected:* IV vs GARCH/LSTM survives any correction; GARCH vs LSTM may not.
-
-**B2. Errors in volatility units and relative terms** · Low · §13.3
-- *What changes:* lead with IV-RMSE and vega-weighted errors next to price RMSE.
-- *Why:* price RMSE is dominated by long-dated options, MAPE by cheap ones; the literature often uses IV-RMSE.
-- *Expected:* same ranking, fairer weighting across maturities.
-
-**B3. Volatility forecast accuracy table** · Medium · §13.1
-- *What changes:* report QLIKE, variance MSE and Mincer-Zarnowitz regressions per model and split (already computed in `vol_forecast_metrics.csv`).
-- *Why:* answers sub-question 1 and, with A2, H5.
-- *Expected:* shows the LSTM's validation-to-test reversal and implied volatility's upward bias side by side.
-
-### C. Data
-
-**C1. Document the monthly-dating fix** · Medium · §9
-- *What changes:* note in the cleaned-data README and the data profile; rename the flag in any future rebuild.
-- *Why:* `is_third_friday` in the cleaned files is still wrong for 2012–2016.
-- *Expected:* no silent data loss in later analyses.
-
-**C2. Use 2012–2018 options; weekly robustness sample** · Medium · §5.2, §7
-- *What changes:* use training-period options to calibrate A2 and give the hybrid PINN longer windows; one rerun with all expiries including weeklies.
-- *Why:* about 0.97 million 2012–2018 options are now available but unused; reviewers expect results beyond monthlies.
-- *Expected:* better-calibrated inputs and a robustness table.
-
-### D. PINN quality
-
-**D1. Tighten the physics-only PINN** · Low · §11, §16.6
-- *What changes:* adaptive loss weights, more L-BFGS steps, a wider network, a convexity penalty.
-- *Why:* PINN error (0.31–0.37 points) is about 50 times Crank-Nicolson's; with the oracle IV only 84% of PINN prices are inside the bid-ask spread vs 99.99% for Black-Scholes.
-- *Expected:* error below 0.1 points.
-
-### E. Engineering
-
-**E1. Timestamped logs and checkpointing** · Low
-- *What changes:* timestamped progress per quarter; save each quarter and resume from the last finished one; smaller prediction files.
-- *Why:* a buffered log cost 50 minutes; a crash late in the 5-hour pricing stage would lose everything.
-- *Expected:* safe long runs; about 0.4 GB instead of 1.3 GB of predictions.
-
-**E2. Freeze the software environment** · Low · §21
-- *What changes:* commit a lock file; record commit and config in each run folder.
-- *Why:* exact reproducibility for the thesis appendix.
-
----
-
-## 6. Phases
-
-| Phase | Items | Laptop time | Question it answers |
-|---|---|---|---|
-| 1 | A5, B1, B2, B3, C1, E1, E2 | Minutes | Which differences are real after multiple-testing control? |
-| 2 | A1, A2 | ≈ 1 h | Is IV better because it forecasts better, or because it carries the smile and premium? (SQ8, H7) |
-| 3 | A3 | ≈ 1–2 h | Can a well-specified deep-learning forecaster match GARCH or IV? |
-| 4 | A4 | ≈ 8 h (overnight) | How much should a PINN trust market data against physics? (H6) |
-| 5 | C2, D1 | ≈ 6–8 h | Do conclusions hold on other contracts and with a more accurate PINN? |
-| 6 | Final tables, figures, regenerated report | – | – |
-
-**Recommended start: phases 1 and 2.** They are cheap, and phase 2 decides how the main result is framed.
-
----
-
-## 7. Open choices and defaults
-
-Edit the right-hand column to change a default.
-
-| Item | Choice | Default |
-|---|---|---|
-| A1 | Smile source | Previous day's fitted quadratic smile (same as C2) |
-| A2 | Premium window | Trailing 12 months; ratio averaged over ATM options at the 21-day horizon |
-| A3 | LSTM-IV hybrid | Separate treatment; pure LSTM kept as Treatment B |
-| A3 | Longer history | SPX daily closes from 2000 |
-| A4 | λ values | 0.01, 0.1, 1, 10 with seeds 0 and 1 |
-| B1 | Correction method | Holm-Bonferroni within each engine; Model Confidence Set as a check |
-| C2 | Robustness sample | All expiries (monthly and weekly), same filters |
-
----
-
-## 8. Updated work plan
-
-| Step | Work | Who |
-|---|---|---|
-| 1 | Phases 1 and 2: code in the repo, run on the laptop, results in the thread | Claude, laptop |
-| 2 | Phase 3 (LSTM) and phase 4 (λ sweep, overnight) | Claude, laptop |
-| 3 | Phase 5 robustness, if time allows | Claude, laptop |
-| 4 | Freeze results; write Section 1 changes into the methodology chapter | Team |
-| 5 | Results and discussion chapters, figures, presentation | Team |
+See [`reports/IMPROVEMENT_PROPOSAL.md`](../reports/IMPROVEMENT_PROPOSAL.md). Items A1 and A2 test SQ8 and H7, A3 tests H4, A4 tests H6, and B1 settles H1-H3.
 
 ---
 
@@ -244,3 +95,4 @@ Edit the right-hand column to change a default.
 | Date | Change |
 |---|---|
 | 2026-10-04 | v3 created after the first full run |
+| 2026-10-04 | Improvement menu moved to reports/IMPROVEMENT_PROPOSAL.md so there is one list |
