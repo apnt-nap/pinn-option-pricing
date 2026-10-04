@@ -7,7 +7,7 @@ Amends the revised proposal (v2) after the first full run on the real data. Last
 
 ## How to use this file
 
-This file amends the research proposal: what changed in the method, where the hypotheses stand, and the new question the improvements answer. The **list of improvements you can request** (codes A1 to W1, phases 1 to 6, acceptance criteria and defaults) lives in one place only: [`reports/IMPROVEMENT_PROPOSAL.md`](../reports/IMPROVEMENT_PROPOSAL.md). Ask for work by those codes, for example "do Phase 1" or "do A1 and A2".
+This file amends the research proposal: what changed in the method, where the hypotheses stand, and the new question the improvements answer. The **list of improvements you can request** (codes A1 to W1, phases 1 to 6, acceptance criteria and defaults) lives in one place only: [`IMPROVEMENT_PROPOSAL.md`](../IMPROVEMENT_PROPOSAL.md). Ask for work by those codes, for example "do Phase 1" or "do A1 and A2".
 
 ---
 
@@ -86,7 +86,7 @@ Treatments A, B, C1 and C2 stay unchanged: the first-run comparison remains prim
 
 ## 4. Improvements
 
-See [`reports/IMPROVEMENT_PROPOSAL.md`](../reports/IMPROVEMENT_PROPOSAL.md). Items A1 and A2 test SQ8 and H7, A3 tests H4, A4 tests H6, and B1 settles H1-H3.
+See [`IMPROVEMENT_PROPOSAL.md`](../IMPROVEMENT_PROPOSAL.md). Items A1 and A2 test SQ8 and H7, A3 tests H4, A4 tests H6, and B1 settles H1-H3.
 
 ---
 
@@ -95,4 +95,4 @@ See [`reports/IMPROVEMENT_PROPOSAL.md`](../reports/IMPROVEMENT_PROPOSAL.md). Ite
 | Date | Change |
 |---|---|
 | 2026-10-04 | v3 created after the first full run |
-| 2026-10-04 | Improvement menu moved to reports/IMPROVEMENT_PROPOSAL.md so there is one list |
+| 2026-10-04 | Improvement menu moved to IMPROVEMENT_PROPOSAL.md (repo root) so there is one list |
