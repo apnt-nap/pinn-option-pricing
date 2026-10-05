@@ -1,0 +1,29 @@
+# Full study on the cleaned OptionsDX SPX data (2012-2023).
+# Paths are relative to the folder you run from; point data_dir at the `data-clean` folder
+# written by clean_spx.py. Every key not listed here takes its value from
+# src/pinnvol/config.py (DEFAULTS).
+seed: 0
+device: auto
+
+paths:
+  data_dir: ../data-clean
+  rates_dir: data-external/fred
+  extra_prices_csv: null        # optional: longer SPX close history (date,S) for GARCH/LSTM
+  output_dir: runs/main
+
+period:
+  start: "2012-01-01"
+  train_end: "2018-12-31"
+  valid_end: "2019-12-31"
+  test_end: "2023-12-31"
+
+sample:
+  dte_min: 7
+  dte_max: 180
+  fwd_moneyness_min: 0.80
+  fwd_moneyness_max: 1.20
+  max_rel_spread: 0.20
+  contract_family: monthly      # "all" for the SPXW robustness sample
+  max_options_per_day: null
+
+treatments: [garch, lstm, iv_atm, iv_surface, hv21, har, iv_atm_same_day, iv_contract_same_day]
